@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat Box</title>
+   </head>
+   <body>
+        <div id="error-container"></div>
+        <input id="name" type="text" name="name" value = "" 
+            placeholder="Enter your name...">
+        <button type="button" name="button" onclick = "setUsername()">Join</button>
+        
+
+        <script src = "/socket.io/socket.io.js"></script>
+        <script>
+            var socket = io();
+            const setUsername = () => {
+                socket.emit('setUsername', document.getElementById('name').value);
+            };
+            var user;
+            socket.on('userExists', (data) => {
+                document.getElementById('error-container').innerHTML = data;
+            });
+            socket.on('userSet', (data) => {
+                user = data.username;
+                document.body.innerHTML = '<input type="text" id="message" placeholder="Enter your message...">\
+                <button type="button" name="button" onclick="sendMessage()">Send</button>\
+                <div id="feedback"></div>\
+                <div id="message-container"></div>';
+            });
+
+            const sendMessage = () => {
+                var msg = document.getElementById('message').value;
+                if (msg) {
+                    socket.emit('msg', {message: msg, user: user});
+                }
+            }
+            socket.on('newmsg', (data) => {
+                if(user) {
+                    document.getElementById('message-container').innerHTML += '<div><b>' + 
+                    data.user + '</b>: ' + data.message + '</div>'
+                }
+            })
+
+            const timeoutFunction = () => {
+                socket.emit('typing', false);
+            }
+
+            document.getElementById('message').addEventListener('keypress', () => {
+                socket.emit('typing', document.getElementById('name').value);
+            })
+
+            socket.on('typing', (data) => {
+                document.getElementById('feedback').innerHTML = '<p><em>' + data + ' is typing...</em></p>';
+            });
+
+            // $(function () {
+            //     var socket = io();
+            //     $('form').submit(function(e){
+            //         e.preventDefault(); // prevents page reloading
+            //         socket.emit('chat message', $('#m').val());
+            //         $('#m').val('');
+            //         return false;
+            //     });
+            //     socket.on('chat message', function(msg){
+            //         $('#messages').append($('<li>').text(msg));
+            //     });
+            // });
+        </script>
+    </body>
+   
+</html>
